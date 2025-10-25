@@ -353,8 +353,8 @@ class VolkswagenIDBaseEntity(CoordinatorEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"vw{self.data.vin}")},
             manufacturer="Cupra",
-            model=f"{self.data.model}",  # format because of the ID.3/ID.4 names.
-            name=f"{self.data.nickname} ({self.data.vin})",
+            model=f"{self.data.model}",
+            name=f"{self.data.nickname}",
         )
 
     @property

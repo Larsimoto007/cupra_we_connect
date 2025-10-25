@@ -40,15 +40,11 @@ class CupraBaseButton(ButtonEntity):
         self._we_connect = we_connect
         self._vehicle = vehicle
 
-        vin = getattr(vehicle.vin, "value", str(vehicle.vin))
-        self._vin = vin
-        self._nickname = getattr(vehicle, "nickname", vin)
-
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"vw{vin}")},
-            manufacturer="CUPRA",
-            model=getattr(vehicle, "model", None),
-            name=self._nickname,
+            identifiers={(DOMAIN, f"vw{self.data.vin}")},
+            manufacturer="Cupra",
+            model=f"{self.data.model}",  
+            name=f"{self.data.nickname}",
         )
 
 class VolkswagenIDStartClimateButton(CupraBaseButton):

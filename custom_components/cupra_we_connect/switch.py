@@ -33,19 +33,11 @@ class CupraSwitchBase(CoordinatorEntity, SwitchEntity):
         self.we_connect = we_connect
         self.index = index
 
-        v = self.data  # Shortcut
-        vin = getattr(v.vin, "value", str(v.vin))
-
-        self._vin = vin
-        self._nickname = getattr(v, "nickname", vin)
-        self._model = getattr(v, "model", None)
-
-        # WICHTIG: identisch zu deinen anderen Entitäten
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"vw{vin}")},
-            manufacturer="CUPRA",
-            model=self._model,
-            name=self._nickname,
+            identifiers={(DOMAIN, f"vw{self.data.vin}")},
+            manufacturer="Cupra",
+            model=f"{self.data.model}",
+            name=f"{self.data.nickname}",
         )
 
     @property
