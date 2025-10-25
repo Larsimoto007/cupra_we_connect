@@ -2,6 +2,7 @@
 from weconnect_cupra import weconnect_cupra
 
 from homeassistant.components.button import ButtonEntity
+from homeassistant.helpers.entity import DeviceInfo
 
 from . import get_object_value, set_ac_charging_speed, set_climatisation, start_stop_charging
 from .const import DOMAIN
@@ -12,20 +13,22 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Add buttons for passed config_entry in HA."""
-    _LOGGER.warning("BUTTON platform started for entry_id=%s", config_entry.entry_id)
     we_connect: weconnect_cupra.WeConnect = hass.data[DOMAIN][config_entry.entry_id]
     vehicles = hass.data[DOMAIN][config_entry.entry_id + "_vehicles"]
 
-    _LOGGER.warning("BUTTON got we_connect=%s, vehicles_count=%s", type(we_connect), len(vehicles))
+    _LOGGER.warning("BUTTON setup: vehicles_count=%s", len(vehicles))
 
     entities = []
     for vehicle in vehicles:  # weConnect.vehicles.items():
+        vin = getattr(vehicle.vin, "value", str(vehicle.vin))
+        _LOGGER.warning("BUTTON creating for VIN=%s nick=%s", vin, vehicle.nickname)
         entities.append(VolkswagenIDStartClimateButton(vehicle, we_connect))
         entities.append(VolkswagenIDStopClimateButton(vehicle, we_connect))
         entities.append(VolkswagenIDStartChargingButton(vehicle, we_connect))
         entities.append(VolkswagenIDStopChargingButton(vehicle, we_connect))
         entities.append(VolkswagenIDToggleACChargeSpeed(vehicle, we_connect))
 
+    _LOGGER.warning("BUTTON adding %s entities", len(entities))
     async_add_entities(entities)
 
     return True
@@ -36,14 +39,24 @@ class VolkswagenIDStartClimateButton(ButtonEntity):
 
     def __init__(self, vehicle, we_connect) -> None:
         """Initialize VolkswagenID vehicle sensor."""
-        self._attr_name = f"{vehicle.nickname} Start Climate"
-        self._attr_unique_id = f"{vehicle.vin}-start_climate"
         self._we_connect = we_connect
         self._vehicle = vehicle
 
-    def press(self) -> None:
-        """Handle the button press."""
-        set_climatisation(self._vehicle.vin.value, self._we_connect, "start", 0)
+        vin = getattr(vehicle.vin, "value", str(vehicle.vin))
+
+        self._attr_name = f"Start Climate"
+        self._attr_unique_id = f"{vin}-start_climate"
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"vw{vin}")},
+            manufacturer="CUPRA",
+            model=getattr(vehicle, "model", None),
+            name=vehicle.nickname,
+        )
+    async def async_press(self) -> None:
+        await self.hass.async_add_executor_job(
+            set_climatisation, self._vehicle.vin.value, self._we_connect, "start", 0
+        )
 
 
 class VolkswagenIDStopClimateButton(ButtonEntity):
