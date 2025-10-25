@@ -21,7 +21,7 @@ from homeassistant.helpers.update_coordinator import (
 
 from .const import DOMAIN
 
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SENSOR, Platform.NUMBER, Platform.DEVICE_TRACKER]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SENSOR, Platform.NUMBER, Platform.DEVICE_TRACKER, Platform.SWITCH]
 
 _LOGGER = logging.getLogger(__name__)
 
