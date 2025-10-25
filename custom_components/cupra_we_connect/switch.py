@@ -17,8 +17,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     entities = []
     for idx, vehicle in enumerate(vehicles):
-        entities.append(CupraClimateSwitch(we_connect, coordinator, idx))
-        entities.append(CupraChargingSwitch(we_connect, coordinator, idx))
+        entities.append(CupraClimateSwitch(we_connect, coordinator, idx, vehicle))
+        entities.append(CupraChargingSwitch(we_connect, coordinator, idx, vehicle))
+        entities.append(CupraACChargeSpeedSwitch(we_connect, coordinator, idx, vehicle))
+
 
     async_add_entities(entities, update_before_add=False)
     return True
@@ -28,22 +30,29 @@ class CupraSwitchBase(CoordinatorEntity, SwitchEntity):
     _attr_should_poll = False
     _attr_has_entity_name = True
 
-    def __init__(self, we_connect: weconnect_cupra.WeConnect, coordinator, index: int):
+    def __init__(self, we_connect: weconnect_cupra.WeConnect, coordinator, index: int, vehicle):
         super().__init__(coordinator)
         self.we_connect = we_connect
         self.index = index
+        self._vehicle = vehicle
 
+        vin = getattr(vehicle.vin, "value", str(vehicle.vin))
+        nickname = getattr(vehicle, "nickname", vin)
+        model = getattr(vehicle, "model", None)
+
+        self._vin = vin
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"vw{self.data.vin}")},
+            identifiers={(DOMAIN, f"vw{vin}")},
             manufacturer="Cupra",
-            model=f"{self.data.model}",
-            name=f"{self.data.nickname}",
+            model=model,
+            name=nickname,
         )
 
     @property
     def data(self):
         # Vehicle-Objekt aus dem Coordinator nach Index
         return self.coordinator.data[self.index]
+
 
 
 class CupraClimateSwitch(CupraSwitchBase):
