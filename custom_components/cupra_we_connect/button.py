@@ -6,11 +6,17 @@ from homeassistant.components.button import ButtonEntity
 from . import get_object_value, set_ac_charging_speed, set_climatisation, start_stop_charging
 from .const import DOMAIN
 
+import logging
+_LOGGER = logging.getLogger(__name__)
+
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Add buttons for passed config_entry in HA."""
+    _LOGGER.warning("BUTTON platform started for entry_id=%s", config_entry.entry_id)
     we_connect: weconnect_cupra.WeConnect = hass.data[DOMAIN][config_entry.entry_id]
     vehicles = hass.data[DOMAIN][config_entry.entry_id + "_vehicles"]
+
+    _LOGGER.warning("BUTTON got we_connect=%s, vehicles_count=%s", type(we_connect), len(vehicles))
 
     entities = []
     for vehicle in vehicles:  # weConnect.vehicles.items():
