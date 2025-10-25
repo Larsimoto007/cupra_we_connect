@@ -64,14 +64,25 @@ class VolkswagenIDStopClimateButton(ButtonEntity):
 
     def __init__(self, vehicle, we_connect) -> None:
         """Initialize VolkswagenID vehicle sensor."""
-        self._attr_name = f"{vehicle.nickname} Stop Climate"
-        self._attr_unique_id = f"{vehicle.vin}-stop_climate"
         self._we_connect = we_connect
         self._vehicle = vehicle
 
-    def press(self) -> None:
-        """Handle the button press."""
-        set_climatisation(self._vehicle.vin.value, self._we_connect, "stop", 0)
+        vin = getattr(vehicle.vin, "value", str(vehicle.vin))
+
+        self._attr_name = f"Stop Climate"
+        self._attr_unique_id = f"{vin}-stop_climate"
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"vw{vin}")},
+            manufacturer="CUPRA",
+            model=getattr(vehicle, "model", None),
+            name=vehicle.nickname,
+        )
+
+    async def async_press(self) -> None:
+        await self.hass.async_add_executor_job(
+            set_climatisation, self._vehicle.vin.value, self._we_connect, "stop", 0
+        )
 
 
 class VolkswagenIDStartChargingButton(ButtonEntity):
@@ -79,14 +90,25 @@ class VolkswagenIDStartChargingButton(ButtonEntity):
 
     def __init__(self, vehicle, we_connect) -> None:
         """Initialize VolkswagenID vehicle sensor."""
-        self._attr_name = f"{vehicle.nickname} Start Charging"
-        self._attr_unique_id = f"{vehicle.vin}-start_charging"
         self._we_connect = we_connect
         self._vehicle = vehicle
 
-    def press(self) -> None:
-        """Handle the button press."""
-        start_stop_charging(self._vehicle.vin.value, self._we_connect, "start")
+        vin = getattr(vehicle.vin, "value", str(vehicle.vin))
+
+        self._attr_name = f"Start Charging"
+        self._attr_unique_id = f"{vin}-start_charging"
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"vw{vin}")},
+            manufacturer="CUPRA",
+            model=getattr(vehicle, "model", None),
+            name=vehicle.nickname,
+        )
+
+    async def async_press(self) -> None:
+        await self.hass.async_add_executor_job(
+            start_stop_charging, self._vehicle.vin.value, self._we_connect, "start"
+        )
 
 
 class VolkswagenIDStopChargingButton(ButtonEntity):
@@ -94,41 +116,64 @@ class VolkswagenIDStopChargingButton(ButtonEntity):
 
     def __init__(self, vehicle, we_connect) -> None:
         """Initialize VolkswagenID vehicle sensor."""
-        self._attr_name = f"{vehicle.nickname} Stop Charging"
-        self._attr_unique_id = f"{vehicle.vin}-stop_charging"
         self._we_connect = we_connect
         self._vehicle = vehicle
 
-    def press(self) -> None:
-        """Handle the button press."""
-        start_stop_charging(self._vehicle.vin.value, self._we_connect, "stop")
+        vin = getattr(vehicle.vin, "value", str(vehicle.vin))
 
+        self._attr_name = f"Stop Charging"
+        self._attr_unique_id = f"{vin}-stop_charging"
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"vw{vin}")},
+            manufacturer="CUPRA",
+            model=getattr(vehicle, "model", None),
+            name=vehicle.nickname,
+        )
+
+    async def async_press(self) -> None:
+        await self.hass.async_add_executor_job(
+            start_stop_charging, self._vehicle.vin.value, self._we_connect, "stop"
+        )
 
 class VolkswagenIDToggleACChargeSpeed(ButtonEntity):
     """Button for toggling the charge speed."""
 
     def __init__(self, vehicle, we_connect: weconnect_cupra.WeConnect) -> None:
         """Initialize VolkswagenID vehicle sensor."""
-        self._attr_name = f"{vehicle.nickname} Toggle AC Charge Speed"
-        self._attr_unique_id = f"{vehicle.vin}-toggle_ac_charge_speed"
         self._we_connect = we_connect
         self._vehicle = vehicle
 
-    def press(self) -> None:
-        """Handle the button press."""
+        vin = getattr(vehicle.vin, "value", str(vehicle.vin))
 
+        self._attr_name = f"Toggle AC Charge Speed"
+        self._attr_unique_id = f"{vin}-toggle_ac_charge_speed"
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"vw{vin}")},
+            manufacturer="CUPRA",
+            model=getattr(vehicle, "model", None),
+            name=vehicle.nickname,
+        )
+
+    async def async_press(self) -> None:
+        """Handle the button press asynchronously."""
         current_state = get_object_value(
             self._vehicle.domains["charging"]["chargingSettings"].maxChargeCurrentAC
         )
 
         if current_state == "maximum":
-            set_ac_charging_speed(
+            _LOGGER.debug("Switching AC charge speed to reduced for VIN %s", self._vehicle.vin.value)
+            await self.hass.async_add_executor_job(
+                set_ac_charging_speed,
                 self._vehicle.vin.value,
                 self._we_connect,
                 "reduced",
             )
         else:
-            set_ac_charging_speed(
+            _LOGGER.debug("Switching AC charge speed to maximum for VIN %s", self._vehicle.vin.value)
+            await self.hass.async_add_executor_job(
+                set_ac_charging_speed,
                 self._vehicle.vin.value,
                 self._we_connect,
                 "maximum",
