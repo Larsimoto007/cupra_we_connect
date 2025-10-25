@@ -4,7 +4,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from . import set_climatisation, start_stop_charging, get_object_value
+from . import set_climatisation, start_stop_charging, get_object_value,  set_ac_charging_speed
 from weconnect_cupra import weconnect_cupra
 from weconnect_cupra.elements.control_operation import ControlOperation
 
@@ -24,7 +24,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     return True
 
 
-class _CupraBase(CoordinatorEntity, SwitchEntity):
+class CupraSwitchBase(CoordinatorEntity, SwitchEntity):
     _attr_should_poll = False
     _attr_has_entity_name = True
 
@@ -54,7 +54,7 @@ class _CupraBase(CoordinatorEntity, SwitchEntity):
         return self.coordinator.data[self.index]
 
 
-class CupraClimateSwitch(_CupraBase):
+class CupraClimateSwitch(CupraSwitchBase):
     """Ein/Aus für Klimatisierung."""
 
     def __init__(self, we_connect, coordinator, index: int):
@@ -72,7 +72,7 @@ class CupraClimateSwitch(_CupraBase):
                 v.domains["climatisation"]["climatisationStatus"].climatisationState.value
             )
             # Mögliche Werte je nach Lib: "on"/"off", "heating"/"cooling"/"off" etc.
-            return str(state).lower() not in ("off","aus", "false", "inactive", "stopped", "0", "")
+            return str(state).lower() not in ("off", "aus", "false", "inactive", "stopped", "0", "")
         except Exception:
             # 2) Fallback: Control-Zustand, wenn verfügbar (nicht immer lesbar)
             try:
@@ -84,29 +84,27 @@ class CupraClimateSwitch(_CupraBase):
         return False
 
     async def async_turn_on(self, **kwargs) -> None:
-        await self.hass.async_add_executor_job(
-            set_climatisation,
-            self._vin,
-            self.we_connect,
-            "start",
-            0,  # oder Zieltemp, wenn du magst
+        success = await self.hass.async_add_executor_job(
+            set_climatisation, self._vin, self.we_connect, "start", 0
         )
-        # Optional optimistisch:
-        # self.async_write_ha_state()
+        if success:
+            # Optimistisch: sofort auf AN setzen
+            self._attr_is_on = True
+            self.async_write_ha_state()
+        else:
+            _LOGGER.error("Climate START failed for VIN %s", self._vin)
 
     async def async_turn_off(self, **kwargs) -> None:
-        await self.hass.async_add_executor_job(
-            set_climatisation,
-            self._vin,
-            self.we_connect,
-            "stop",
-            0,
+        success = await self.hass.async_add_executor_job(
+            set_climatisation, self._vin, self.we_connect, "stop", 0
         )
-        # Optional optimistisch:
-        # self.async_write_ha_state()
+        if success:
+            self._attr_is_on = False
+            self.async_write_ha_state()
+        else:
+            _LOGGER.error("Climate STOP failed for VIN %s", self._vin)
 
-
-class CupraChargingSwitch(_CupraBase):
+class CupraChargingSwitch(CupraSwitchBase):
     """Ein/Aus für Ladevorgang."""
 
     def __init__(self, we_connect, coordinator, index: int):
@@ -129,17 +127,61 @@ class CupraChargingSwitch(_CupraBase):
             return False
 
     async def async_turn_on(self, **kwargs) -> None:
-        await self.hass.async_add_executor_job(
-            start_stop_charging,
-            self._vin,
-            self.we_connect,
-            "start",
+        success = await self.hass.async_add_executor_job(
+            start_stop_charging, self._vin, self.we_connect, "start"
         )
+        if success:
+            self._attr_is_on = True
+            self.async_write_ha_state()
+        else:
+            _LOGGER.error("Charging START failed for VIN %s", self._vin)
 
     async def async_turn_off(self, **kwargs) -> None:
-        await self.hass.async_add_executor_job(
-            start_stop_charging,
-            self._vin,
-            self.we_connect,
-            "stop",
+        success = await self.hass.async_add_executor_job(
+            start_stop_charging, self._vin, self.we_connect, "stop"
         )
+        if success:
+            self._attr_is_on = False
+            self.async_write_ha_state()
+        else:
+            _LOGGER.error("Charging STOP failed for VIN %s", self._vin)
+
+class CupraACChargeSpeedSwitch(CupraSwitchBase):
+    """Switch: ON = maximum, OFF = reduced"""
+
+    def __init__(self, we_connect, coordinator, index: int):
+        super().__init__(we_connect, coordinator, index)
+        self._attr_name = "AC Charge Speed (Maximum)"
+        self._attr_unique_id = f"{self._vin}-ac_charge_speed_switch"
+
+    @property
+    def is_on(self) -> bool:
+        v = self.data
+        try:
+            current = get_object_value(
+                v.domains["charging"]["chargingSettings"].maxChargeCurrentAC
+            )
+            return str(current).lower() == "maximum"
+        except Exception:
+            return False
+
+    async def async_turn_on(self, **kwargs) -> None:
+        success = await self.hass.async_add_executor_job(
+            set_ac_charging_speed, self._vin, self.we_connect, "maximum"
+        )
+        if success:
+            # Optional sofort aktualisieren
+            self._attr_is_on = True
+            self.async_write_ha_state()
+        else:
+            _LOGGER.error("Failed to set AC charge speed to maximum for VIN %s", self._vin)
+
+    async def async_turn_off(self, **kwargs) -> None:
+        success = await self.hass.async_add_executor_job(
+            set_ac_charging_speed, self._vin, self.we_connect, "reduced"
+        )
+        if success:
+            self._attr_is_on = False
+            self.async_write_ha_state()
+        else:
+            _LOGGER.error("Failed to set AC charge speed to reduced for VIN %s", self._vin)
