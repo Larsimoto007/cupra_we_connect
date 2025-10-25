@@ -8,8 +8,8 @@
   "homekit": {},
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/daernsinstantfortress/cupra_we_connect/issues",
-  "requirements": ["weconnect-cupra-sren09==0.50.17", "ascii_magic==2.1.1"],
+  "requirements": ["git+https://github.com/Larsimoto007/WeConnect-Cupra-python.git#egg=weconnect-cupra-larsimoto", "ascii_magic==2.1.1"],
   "ssdp": [],
-  "version": "0.8.6",
+  "version": "0.8.7",
   "zeroconf": []
 }
