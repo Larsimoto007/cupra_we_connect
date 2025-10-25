@@ -58,8 +58,8 @@ class CupraSwitchBase(CoordinatorEntity, SwitchEntity):
 class CupraClimateSwitch(CupraSwitchBase):
     """Ein/Aus für Klimatisierung."""
 
-    def __init__(self, we_connect, coordinator, index: int):
-        super().__init__(we_connect, coordinator, index)
+    def __init__(self, we_connect, coordinator, index: int, vehicle):
+        super().__init__(we_connect, coordinator, index, vehicle)
         self._attr_name = "Climate"
         self._attr_unique_id = f"{self._vin}-climate_switch"
 
@@ -108,8 +108,8 @@ class CupraClimateSwitch(CupraSwitchBase):
 class CupraChargingSwitch(CupraSwitchBase):
     """Ein/Aus für Ladevorgang."""
 
-    def __init__(self, we_connect, coordinator, index: int):
-        super().__init__(we_connect, coordinator, index)
+    def __init__(self, we_connect, coordinator, index: int, vehicle):
+        super().__init__(we_connect, coordinator, index, vehicle)
         self._attr_name = "Charging"
         self._attr_unique_id = f"{self._vin}-charging_switch"
 
@@ -150,8 +150,8 @@ class CupraChargingSwitch(CupraSwitchBase):
 class CupraACChargeSpeedSwitch(CupraSwitchBase):
     """Switch: ON = maximum, OFF = reduced"""
 
-    def __init__(self, we_connect, coordinator, index: int):
-        super().__init__(we_connect, coordinator, index)
+    def __init__(self, we_connect, coordinator, index: int, vehicle):
+        super().__init__(we_connect, coordinator, index, vehicle)
         self._attr_name = "AC Charge Speed (Maximum)"
         self._attr_unique_id = f"{self._vin}-ac_charge_speed_switch"
 
