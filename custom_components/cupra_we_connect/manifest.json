@@ -10,6 +10,6 @@
   "issue_tracker": "https://github.com/Larsimoto007/cupra_we_connect/issues",
   "requirements": ["weconnect-cupra-larsimoto @ git+https://github.com/Larsimoto007/WeConnect-Cupra-python@main", "ascii_magic==2.1.1"],
   "ssdp": [],
-  "version": "0.8.11",
+  "version": "0.8.12",
   "zeroconf": []
 }
